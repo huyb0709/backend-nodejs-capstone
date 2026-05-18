@@ -22,6 +22,8 @@ connectToDatabase().then(() => {
 app.use(express.json());
 
 // Route files
+const secondChanceRoutes = require('./routes/secondChanceItemsRoutes');
+const searchRoutes = require('./routes/searchRoutes');
 
 // authRoutes Step 2: import the authRoutes and store in a constant called authRoutes
 //{{insert code here}}
@@ -30,7 +32,8 @@ app.use(express.json());
 //{{insert code here}}
 
 // Search API Task 1: import the searchRoutes and store in a constant called searchRoutes
-//{{insert code here}}
+app.use('/api/secondchance/items', secondChanceRoutes);
+app.use('/api/secondchance/search', searchRoutes);
 
 
 const pinoHttp = require('pino-http');
