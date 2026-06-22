@@ -1,11 +1,10 @@
 const express = require('express');
-const jwt = require("jsonwebtoken");
+const jwt = require('jsonwebtoken');
 const router = express.Router();
-const bcryptjs = require("bcryptjs");
+const bcryptjs = require('bcryptjs');
 const connectToDatabase = require('../models/db');
 const logger = require('../logger');
 const { validationResult } = require('express-validator');
-
 
 const JWT_SECRET = `${process.env.JWT_SECRET}`;
 
@@ -13,7 +12,7 @@ router.post('/register', async (req, res) => {
     try {
         const email = req.body.email;
         const db = await connectToDatabase();
-        const collection = db.collection("users");
+        const collection = db.collection('users');
         const existingEmail = await collection.findOne({ email: req.body.email });
 
         if (existingEmail) {
@@ -23,6 +22,7 @@ router.post('/register', async (req, res) => {
 
         const salt = await bcryptjs.genSalt(10);
         const hash = await bcryptjs.hash(req.body.password, salt);
+
         const newUser = await collection.insertOne({
             email: req.body.email,
             firstName: req.body.firstName,
@@ -30,11 +30,13 @@ router.post('/register', async (req, res) => {
             password: hash,
             createdAt: new Date()
         });
+
         const payload = {
             user: {
                 id: newUser.insertedId
             }
         };
+
         const authtoken = jwt.sign(payload, JWT_SECRET);
 
         logger.info('User registered successfully');
@@ -46,48 +48,50 @@ router.post('/register', async (req, res) => {
 });
 
 router.post('/login', async (req, res) => {
-    console.log("\n\n Inside login")
+    console.log('\n\n Inside login');
 
     try {
         const db = await connectToDatabase();
-        const collection = db.collection("users");
+        const collection = db.collection('users');
         const theUser = await collection.findOne({ email: req.body.email });
 
-        if (theUser) {
-            let result = await bcryptjs.compare(req.body.password, theUser.password)
-
-            if(!result) {
-                logger.error('Passwords do not match');
-                return res.status(404).json({ error: 'Wrong pasword' });
-            }
-
-            let payload = {
-                user: {
-                    id: theUser._id.toString(),
-                },
-            };
-
-            const userName = theUser.firstName;
-            const userEmail = theUser.email;
-            const authtoken = jwt.sign(payload, JWT_SECRET);
-
-            logger.info('User logged in successfully');
-            return res.status(200).json({ authtoken, userName, userEmail });
-        } else {
+        if (!theUser) {
             logger.error('User not found');
             return res.status(404).json({ error: 'User not found' });
         }
+
+        const result = await bcryptjs.compare(req.body.password, theUser.password);
+
+        if (!result) {
+            logger.error('Passwords do not match');
+            return res.status(404).json({ error: 'Wrong pasword' });
+        }
+
+        const payload = {
+            user: {
+                id: theUser._id.toString()
+            }
+        };
+
+        const userName = theUser.firstName;
+        const userEmail = theUser.email;
+        const authtoken = jwt.sign(payload, JWT_SECRET);
+
+        logger.info('User logged in successfully');
+        return res.status(200).json({ authtoken, userName, userEmail });
     } catch (e) {
         logger.error(e);
-        return res.status(500).json({ error: 'Internal server error', details: e.message });
-      }
+        return res.status(500).json({
+            error: 'Internal server error',
+            details: e.message
+        });
+    }
 });
 
 router.put('/update', async (req, res) => {
-
     const errors = validationResult(req);
 
-	if (!errors.isEmpty()) {
+    if (!errors.isEmpty()) {
         logger.error('Validation errors in update request', errors.array());
         return res.status(400).json({ errors: errors.array() });
     }
@@ -97,17 +101,19 @@ router.put('/update', async (req, res) => {
 
         if (!email) {
             logger.error('Email not found in the request headers');
-            return res.status(400).json({ error: "Email not found in the request headers" });
-		}
+            return res.status(400).json({
+                error: 'Email not found in the request headers'
+            });
+        }
 
-		const db = await connectToDatabase();
-        const collection = db.collection("users");
+        const db = await connectToDatabase();
+        const collection = db.collection('users');
 
         const existingUser = await collection.findOne({ email });
 
         if (!existingUser) {
             logger.error('User not found');
-            return res.status(404).json({ error: "User not found" });
+            return res.status(404).json({ error: 'User not found' });
         }
 
         existingUser.firstName = req.body.name;
@@ -121,17 +127,17 @@ router.put('/update', async (req, res) => {
 
         const payload = {
             user: {
-                id: updatedUser._id.toString(),
-            },
+                id: updatedUser._id.toString()
+            }
         };
 
         const authtoken = jwt.sign(payload, JWT_SECRET);
-        logger.info('User updated successfully');
 
-        res.json({ authtoken });
+        logger.info('User updated successfully');
+        return res.json({ authtoken });
     } catch (error) {
         logger.error(error);
-        return res.status(500).send("Internal Server Error");
+        return res.status(500).send('Internal Server Error');
     }
 });
 
