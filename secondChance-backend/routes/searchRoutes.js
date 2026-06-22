@@ -9,7 +9,7 @@ router.get('/', async (req, res, next) => {
         const db = await connectToDatabase();
 
 
-        const collection = db.collection("gifts");
+        const collection = db.collection("secondChanceItems");
 
         // Initialize the query object
         let query = {};
